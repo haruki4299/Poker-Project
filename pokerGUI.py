@@ -44,8 +44,7 @@ class Card:
             'A':1
         }
         self.value = rankToVal[self.rank]
-        
-    
+          
 class Deck:
     def __init__(self):
         self.cards = [Card(rank,suit) for suit in suits for rank in ranks]
@@ -56,6 +55,7 @@ class Deck:
     
 
  # Added call, raise fold + alpha here   
+
 class Player:
     def __init__(self, name: str, chips: int = 1000):
         self.name = name
@@ -416,7 +416,7 @@ class Game:
                     print(player.name + ": ")
                     player.printStatus()
                 print("______________________________________________________________________")
-        time.sleep(3)
+        time.sleep(2)
             
     def printWinners(self, winners, bestHand):
         winningHand = bestHand[0][0].replace('_',' ')
@@ -494,6 +494,53 @@ class Game:
             if cur == start:
                 break
         print("Betting Closed")
+    
+    def evalWinners(self):
+            # Evaluating the winner
+            winners = []
+            bestHand = []
+            for player in self.players:
+                if player.folded != True:
+                    if winners == []:
+                        winners.append(player)
+                        bestHand.append(self.findBestHand(player))
+                    else:
+                        curBest = bestHand[0]
+                        compHand = self.findBestHand(player)
+                        result = self.compareHands(curBest, compHand)
+                        if result == 2:
+                            winners = []
+                            bestHand = []
+                            winners.append(player)
+                            bestHand.append(compHand)
+                        elif result == 3:
+                            winners.append(player)
+                            bestHand.append(compHand)
+                        else:
+                            pass
+            return winners, bestHand
+    
+    def distributeWinnings(self, winners):
+        pot = self.pot
+        l = len(winners)
+        winnings = pot // l
+        for winner in winners:
+            winner.totalChips += winnings
+        for player in self.players:
+            player.currentBet = 0
+               
+    def prepNewRound(self):
+        # Rotate SBBB
+        l = len(self.players)
+        self.smallAndBig[0] = (self.smallAndBig[0] + 1) % l
+        self.smallAndBig[1] = (self.smallAndBig[1] + 1) % l
+        # Reset Cards and Deck
+        self.deck = Deck()
+        self.communityCards = CommunityCards()
+        self.pot = 0
+        for player in self.players:
+            player.folded = False
+            player.hand = []
             
     
     def playRound(self) -> list[Player]:
@@ -516,36 +563,24 @@ class Game:
         self.betting()
         # Betting
         
-        # Evaluating the winner
-        winners = []
-        bestHand = []
-        for player in self.players:
-            if winners == []:
-                winners.append(player)
-                bestHand.append(self.findBestHand(player))
-            else:
-                curBest = bestHand[0]
-                compHand = self.findBestHand(player)
-                result = self.compareHands(curBest, compHand)
-                if result == 2:
-                    winners = []
-                    bestHand = []
-                    winners.append(player)
-                    bestHand.append(compHand)
-                elif result == 3:
-                    winners.append(player)
-                    bestHand.append(compHand)
-                else:
-                    pass
-        
-        self.printBoard(True)
+        winners, bestHand = self.evalWinners()
+        self.distributeWinnings(winners)
+            
         self.printWinners(winners, bestHand)
+        self.printBoard(True)
+        self.prepNewRound()
         
         
         
 def main():
     game = Game()
     game.addPlayers()
-    game.playRound()
+    while True:
+        print("______________________________________________________________________")
+        print("Game Start")
+        game.playRound()
+        cont = input("Would you like to continue? (y/n): ")
+        if cont == 'n':
+            break
     
 main()

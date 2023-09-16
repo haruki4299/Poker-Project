@@ -2,12 +2,11 @@
 
 # 2023-09-13
 # Start with just the game the betting will come later and then the CPU and then the graphics?
-# The basics of the pocker code are complete. We can have two players that play each other no betting and see who had the better hand.
-# Still need some brush ups. Think about functionality.
 # Next Step Betting?
 
 import random
 import itertools
+import time
 
 # Constants
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -55,36 +54,67 @@ class Deck:
     def drawCard(self) -> Card:
         return self.cards.pop()
     
-    
+
+ # Added call, raise fold + alpha here   
 class Player:
     def __init__(self, name: str, chips: int = 1000):
         self.name = name
         self.hand = []
-        self.chips = chips
-        self.bet = 0
+        self.totalChips = chips
+        self.currentBet = 0
         self.folded = False
+        
+    def fold(self):
+        self.currentBet = 0
+        self.folded = True
+        
+    def call(self, toMatch):
+        diff = toMatch - self.currentBet
+        if diff >= self.totalChips:
+            self.currentBet += self.totalChips
+            amount = self.totalChips
+            self.totalChips = 0
+            return amount
+        else:
+            self.currentBet += diff
+            self.totalChips -= diff
+            return diff
+    
+    def raiseBet(self, toMatch) -> int:
+        diff = toMatch - self.currentBet
+        raiseAmount = 0
+        while True:
+            raiseAmountStr = input("How many more chips would you like raise by?: ")
+            if raiseAmountStr.isdigit():
+                raiseAmount = int(raiseAmountStr)
+                if raiseAmount > self.totalChips:
+                    print("You do not have enough chips.")
+                elif raiseAmount < diff:
+                    print("You must raise by a larger amount. (To Match: " + str(diff) + ")")
+                    raiseAmount = 0
+                else:
+                    break
+            else:
+                print("Input interger value.")
+        self.totalChips -= raiseAmount
+        self.currentBet += raiseAmount
+        
+        return raiseAmount, self.currentBet
+        
+    def printStatus(self):
+        totalChips = str(self.totalChips)
+        currentBet = str(self.currentBet)
+        s = "Total Chips: " + totalChips
+        if self.folded == True:
+            s = s + " | Folded"
+        else:
+            s = s + " | Current Bet: " + currentBet
+        print(s)
         
     def printCards(self):
         s = self.name + ": " + self.hand[0].rank + " of " + self.hand[0].suit + ", " + self.hand[1].rank + " of " + self.hand[1].suit
         print(s)
-            
     
-    def raiseBet(self, amount: int):
-        if self.chips < amount:
-            amount = self.chips
-        self.chips -= amount
-        self.bet += amount
-    
-    def callBet(self, valueToMatch):
-        if valueToMatch > self.chips:
-            self.bet += self.chips
-            self.chips = 0
-        else:
-            self.chips = self.chips - (valueToMatch - self.bet)
-            self.bet = valueToMatch
-    
-    def fold(self):
-        pass
         
 # Community Cards
 class CommunityCards:
@@ -105,6 +135,10 @@ class Game:
         self.players = []
         self.deck = Deck()
         self.communityCards = CommunityCards()
+        self.smallAndBig = [0,1]
+        self.toMatch = 0
+        self.pot = 0
+        
         
     def addPlayers(self):
         """
@@ -115,7 +149,7 @@ class Game:
         """
         print("Welcome to poker. Please add players to the game (min=2, max=6).")
         count = 1
-        name = input(f"Enter name of player{count}: ")
+        name = input(f"Enter your name (Player 1): ")
         ply = Player(name)
         self.players.append(ply)
         count += 1
@@ -135,7 +169,6 @@ class Game:
             else:
                 print("Please respond with (y/n)")
         
-    
     def dealCards(self):
         for player in self.players:
             card = self.deck.drawCard()
@@ -364,10 +397,26 @@ class Game:
                     bestHand = handInfo
         return bestHand
     
-    def printBoard(self):
+    def printBoard(self, gameEnd):
+        print("______________________________________________________________________")
         self.communityCards.printCards()
-        for player in self.players:
-            player.printCards()
+        print("Pot: " +str(self.pot))
+        print("______________________________________________________________________")
+        if gameEnd:
+            for player in self.players:
+                player.printCards()
+                player.printStatus()
+                print("______________________________________________________________________")
+        else:
+            for player in self.players:
+                if player == self.players[0]:
+                    player.printCards()
+                    player.printStatus()
+                else:
+                    print(player.name + ": ")
+                    player.printStatus()
+                print("______________________________________________________________________")
+        time.sleep(3)
             
     def printWinners(self, winners, bestHand):
         winningHand = bestHand[0][0].replace('_',' ')
@@ -376,12 +425,97 @@ class Game:
             print(player.name)
         print("With the winning hand of " + winningHand)
     
+    def smallAndBigBets(self):
+        bigBlind = self.players[self.smallAndBig[1]]
+        smallBlind = self.players[self.smallAndBig[0]]
+        self.toMatch = 20
+        if bigBlind.totalChips >= 20:
+            bigBlind.totalChips -= 20
+            bigBlind.currentBet += 20
+        else:
+            bigBlind.currentBet = bigBlind.totalChips
+            bigBlind.totalChips = 0
+        self.pot += bigBlind.currentBet
+        if smallBlind.totalChips >= 10:
+            smallBlind.totalChips -= 10
+            smallBlind.currentBet += 10
+        else:
+            smallBlind.currentBet = smallBlind.totalChips
+            smallBlind.totalChips = 0
+        self.pot += smallBlind.currentBet
+              
+    def betting(self):
+        # We have OOOOO SB BB
+        # On the flop Right of BB starts
+        # After that SB starts
+        l = len(self.players)
+        if len(self.communityCards.cards) == 0:
+            start = (self.smallAndBig[1] + 1) % l
+            cur = start
+        else:
+            start = (self.smallAndBig[0]) % l
+            cur = start
+        print("Betting Start\n")
+        while True:
+            player = self.players[cur]
+            validMove = False
+            while validMove == False and player.folded != True:
+                if cur == 0:
+                    print(player.name + ": choose action from following (Enter: 1,2, or 3):")
+                    move = input("1. Call/Check \n2. Raise \n3. Fold \nInput: ")
+                else:
+                    move = "1"
+                if move == "1":
+                    # Call
+                    print(player.name + " Calls " + str(self.toMatch))
+                    print("______________________________________________________________________\n")
+                    validMove = True
+                    self.pot += player.call(self.toMatch)
+                elif move == "2":
+                    # Raise
+                    start = cur
+                    raiseAmount, self.toMatch = player.raiseBet(self.toMatch)
+                    print(self.toMatch)
+                    print(player.name + " Raises by " + str(raiseAmount))
+                    print("______________________________________________________________________\n")
+                    validMove = True
+                    pass
+                elif move == "3":
+                    # Fold
+                    validMove = True
+                    print(player.name + " Folds")
+                    print("______________________________________________________________________\n")
+                    player.fold()
+                else:
+                    print("Invalid Input. Please re-enter your choice.")
+            
+            cur = (cur + 1) % l
+            time.sleep(1)
+            if cur == start:
+                break
+        print("Betting Closed")
+            
+    
     def playRound(self) -> list[Player]:
+        # Take Small and Big Blind
+        self.smallAndBigBets()
         self.dealCards()
+        self.printBoard(False)
+        self.betting()
         # Betting
         self.dealFlop()
+        self.printBoard(False)
+        self.betting()
+        # Betting
         self.dealTurn()
+        self.printBoard(False)
+        self.betting()
+        # Betting
         self.dealRiver()
+        self.printBoard(False)
+        self.betting()
+        # Betting
+        
         # Evaluating the winner
         winners = []
         bestHand = []
@@ -404,7 +538,7 @@ class Game:
                 else:
                     pass
         
-        self.printBoard()
+        self.printBoard(True)
         self.printWinners(winners, bestHand)
         
         

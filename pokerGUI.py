@@ -1,7 +1,14 @@
 # Poker Game with simple GUI
 
-# 2023-09-13
-# We can emply
+# 2023-09-16
+# Basics of the game is done
+# Fix the Ace Card Strength (Urgent)
+#   Can fix in different ways but A can be 1 or 14 is the problem. Maybe add +13 in the right context...
+# Comment on the Functions
+# Work on the GUI (Can Wait)
+# Organize code. Separate files?
+# Work on getting the CPU making more logical decisions? (For Fun)
+# Win Rate Calculator? (Optional)
 
 import random
 import itertools
@@ -474,6 +481,7 @@ class Game:
                     print(player.name + ": choose action from following (Enter: 1,2, or 3):")
                     move = input("1. Call/Check \n2. Raise \n3. Fold \nInput: ")
                 else:
+                    
                     move = "1"
                 if move == "1":
                     # Call

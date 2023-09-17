@@ -1,8 +1,7 @@
 # Poker Game with simple GUI
 
 # 2023-09-13
-# Start with just the game the betting will come later and then the CPU and then the graphics?
-# Next Step Betting?
+# We can emply
 
 import random
 import itertools
@@ -157,7 +156,7 @@ class Game:
         ply = Player(name)
         self.players.append(ply)
         addMore = True
-        while addMore and count < 7:
+        while addMore and count < 6:
             response = input("Would you like to add another player (y/n)?: ")
             if response == 'y':
                 count += 1
@@ -224,10 +223,21 @@ class Game:
                     return 2
                 else:
                     return 3
-            elif handInfo1[0] == "one_pair" or handInfo1[0] == "two_pairs" or handInfo1[0] == "three_of_a_kind" or handInfo1[0] == "four_of_a_kind":
+            elif handInfo1[0] == "one_pair" or handInfo1[0] == "three_of_a_kind" or handInfo1[0] == "four_of_a_kind":
                 if handInfo1[1] > handInfo2[1]:
                     return 1
                 elif handInfo1[1] < handInfo2[1]:
+                    return 2
+                else:
+                    return 3
+            elif handInfo1[0] == "two_pairs":
+                if handInfo1[1] > handInfo2[1]:
+                    return 1
+                elif handInfo1[1] < handInfo2[1]:
+                    return 2
+                elif handInfo1[2] > handInfo2[2]:
+                    return 1
+                elif handInfo1[2] < handInfo2[2]:
                     return 2
                 else:
                     return 3
@@ -400,7 +410,7 @@ class Game:
     def printBoard(self, gameEnd):
         print("______________________________________________________________________")
         self.communityCards.printCards()
-        print("Pot: " +str(self.pot))
+        print("Pot: " + str(self.pot))
         print("______________________________________________________________________")
         if gameEnd:
             for player in self.players:
@@ -455,12 +465,12 @@ class Game:
         else:
             start = (self.smallAndBig[0]) % l
             cur = start
-        print("Betting Start\n")
+        print("\nBetting Start\n")
         while True:
             player = self.players[cur]
             validMove = False
             while validMove == False and player.folded != True:
-                if cur == 0:
+                if cur == 0 and player.totalChips != 0:
                     print(player.name + ": choose action from following (Enter: 1,2, or 3):")
                     move = input("1. Call/Check \n2. Raise \n3. Fold \nInput: ")
                 else:
@@ -475,6 +485,7 @@ class Game:
                     # Raise
                     start = cur
                     raiseAmount, self.toMatch = player.raiseBet(self.toMatch)
+                    self.pot += raiseAmount
                     print(self.toMatch)
                     print(player.name + " Raises by " + str(raiseAmount))
                     print("______________________________________________________________________\n")
@@ -529,21 +540,30 @@ class Game:
         for player in self.players:
             player.currentBet = 0
                
-    def prepNewRound(self):
-        # Rotate SBBB
-        l = len(self.players)
-        self.smallAndBig[0] = (self.smallAndBig[0] + 1) % l
-        self.smallAndBig[1] = (self.smallAndBig[1] + 1) % l
+    def prepNewRound(self) -> bool:
         # Reset Cards and Deck
         self.deck = Deck()
         self.communityCards = CommunityCards()
         self.pot = 0
+        # If the main player has busted, they are out of the game
+        if self.players[0].totalChips == 0:
+            print("You have no chips left!")
+            return True
         for player in self.players:
             player.folded = False
             player.hand = []
-            
-    
-    def playRound(self) -> list[Player]:
+            if player.totalChips == 0:
+                self.players.remove(player)
+        # Rotate SBBB
+        l = len(self.players)
+        if l == 1:
+            print("You are the last player remaining. You win!")
+            return True
+        self.smallAndBig[0] = (self.smallAndBig[0] + 1) % l
+        self.smallAndBig[1] = (self.smallAndBig[1] + 1) % l
+        return False
+              
+    def playRound(self) -> bool:
         # Take Small and Big Blind
         self.smallAndBigBets()
         self.dealCards()
@@ -568,19 +588,21 @@ class Game:
             
         self.printWinners(winners, bestHand)
         self.printBoard(True)
-        self.prepNewRound()
-        
-        
+        return self.prepNewRound()
         
 def main():
     game = Game()
     game.addPlayers()
     while True:
-        print("______________________________________________________________________")
+        print("______________________________________________________________________\n")
         print("Game Start")
-        game.playRound()
-        cont = input("Would you like to continue? (y/n): ")
-        if cont == 'n':
+        gameEnd = game.playRound()
+        if gameEnd != True:
+            cont = input("Would you like to continue? (y/n): ")
+            if cont == 'n':
+                break
+        else:
             break
+    print("Thank you for playing.")
     
 main()

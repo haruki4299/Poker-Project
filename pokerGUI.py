@@ -220,6 +220,16 @@ class Game:
                 else:
                     return 3
             elif "full_house" == handInfo1[0]:
+                # Change Ace value from 1 to 14
+                if handInfo1[1] == 1:
+                    handInfo1[1] += 13
+                if handInfo1[2] == 1:
+                    handInfo1[2] += 13
+                if handInfo2[1] == 1:
+                    handInfo2[1] += 13
+                if handInfo2[2] == 1:
+                    handInfo2[2] += 13
+                # Compare card strengths
                 if handInfo1[1] > handInfo2[1]:
                     return 1
                 elif handInfo1[1] < handInfo2[1]:
@@ -231,6 +241,12 @@ class Game:
                 else:
                     return 3
             elif handInfo1[0] == "one_pair" or handInfo1[0] == "three_of_a_kind" or handInfo1[0] == "four_of_a_kind":
+                # Change Ace value from 1 to 14
+                if handInfo1[1] == 1:
+                    handInfo1[1] += 13
+                if handInfo2[1] == 1:
+                    handInfo2[1] += 13
+                # Compare card strengths
                 if handInfo1[1] > handInfo2[1]:
                     return 1
                 elif handInfo1[1] < handInfo2[1]:
@@ -238,6 +254,16 @@ class Game:
                 else:
                     return 3
             elif handInfo1[0] == "two_pairs":
+                # Change Ace value from 1 to 14
+                if handInfo1[1] == 1:
+                    handInfo1[1] += 13
+                if handInfo1[2] == 1:
+                    handInfo1[2] += 13
+                if handInfo2[1] == 1:
+                    handInfo2[1] += 13
+                if handInfo2[2] == 1:
+                    handInfo2[2] += 13
+                # Compare card strengths
                 if handInfo1[1] > handInfo2[1]:
                     return 1
                 elif handInfo1[1] < handInfo2[1]:
@@ -249,6 +275,12 @@ class Game:
                 else:
                     return 3
             else:
+                # Change Ace value from 1 to 14
+                if handInfo1[1] == 1:
+                    handInfo1[1] += 13
+                if handInfo2[1] == 1:
+                    handInfo2[1] += 13
+                # Compare card strengths
                 for i in range(5):
                     if handInfo1[1+i] != handInfo2[1+i]:
                         if handInfo1[1+i] > handInfo2[1+i]:
@@ -485,7 +517,7 @@ class Game:
                     move = "1"
                 if move == "1":
                     # Call
-                    print(player.name + " Calls " + str(self.toMatch))
+                    print(player.name + " Call/Checks " + str(self.toMatch))
                     print("______________________________________________________________________\n")
                     validMove = True
                     self.pot += player.call(self.toMatch)

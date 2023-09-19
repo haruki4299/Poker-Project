@@ -2,8 +2,6 @@
 
 # 2023-09-16
 # Basics of the game is done
-# Fix the Ace Card Strength (Urgent)
-#   Can fix in different ways but A can be 1 or 14 is the problem. Maybe add +13 in the right context...
 # Comment on the Functions
 # Work on the GUI (Can Wait)
 # Organize code. Separate files?
@@ -14,9 +12,11 @@ import random
 import itertools
 import time
 
-# Constants
+# Constants for card ranks and suits
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
+
+# Hand rankings used for poker evaluation
 HAND_RANKINGS = {
             "high_card": 0,
             "one_pair": 1,
@@ -29,11 +29,13 @@ HAND_RANKINGS = {
             "straight_flush": 8,
         }
 
+# Define a Card class to represent playing cards
 class Card:
     def __init__(self, rank, suit):
         self.rank = rank
         self.suit = suit
         
+        # Mapping of card ranks to integer values for poker hand evaluation
         rankToVal = {
             '2':2,
             '3':3,
@@ -51,17 +53,18 @@ class Card:
         }
         self.value = rankToVal[self.rank]
           
+# Define a Deck class to represent a deck of playing cards
 class Deck:
     def __init__(self):
+        # Create a list of Card objects for a standard deck of 52 cards and shuffle it
         self.cards = [Card(rank,suit) for suit in suits for rank in ranks]
         random.shuffle(self.cards)
         
     def drawCard(self) -> Card:
+        # Draw (pop) a card from the deck and return it
         return self.cards.pop()
-    
 
- # Added call, raise fold + alpha here   
-
+# Define a Player class to represent a player in the poker game
 class Player:
     def __init__(self, name: str, chips: int = 1000):
         self.name = name
@@ -71,22 +74,27 @@ class Player:
         self.folded = False
         
     def fold(self):
+        # Reset the current bet to 0 and mark the player as folded
         self.currentBet = 0
         self.folded = True
         
     def call(self, toMatch):
+        # Calculate and perform a call action by the player
         diff = toMatch - self.currentBet
         if diff >= self.totalChips:
+            # If the required bet is greater than or equal to the player's total chips, they go all-in
             self.currentBet += self.totalChips
             amount = self.totalChips
             self.totalChips = 0
             return amount
         else:
+            # If the required bet is less than the player's total chips, they call that amount
             self.currentBet += diff
             self.totalChips -= diff
             return diff
     
     def raiseBet(self, toMatch) -> int:
+        # Calculate and perform a raise action by the player
         diff = toMatch - self.currentBet
         raiseAmount = 0
         while True:
@@ -102,12 +110,14 @@ class Player:
                     break
             else:
                 print("Input interger value.")
+        # Update the player's total chips and current bet after the raise
         self.totalChips -= raiseAmount
         self.currentBet += raiseAmount
         
         return raiseAmount, self.currentBet
         
     def printStatus(self):
+        # Print the player's total chips, current bet, and folded status
         totalChips = str(self.totalChips)
         currentBet = str(self.currentBet)
         s = "Total Chips: " + totalChips
@@ -118,16 +128,18 @@ class Player:
         print(s)
         
     def printCards(self):
+        # Print the player's name and their two hole cards
         s = self.name + ": " + self.hand[0].rank + " of " + self.hand[0].suit + ", " + self.hand[1].rank + " of " + self.hand[1].suit
         print(s)
     
         
-# Community Cards
+# Define a CommunityCards class to represent the community cards on the table
 class CommunityCards:
     def __init__(self):
         self.cards = []
     
     def printCards(self):
+        # Print the community cards on the table
         print("The Community Cards:")
         s = ""
         for card in self.cards:
@@ -138,13 +150,13 @@ class CommunityCards:
 
 class Game:
     def __init__(self):
-        self.players = []
-        self.deck = Deck()
-        self.communityCards = CommunityCards()
-        self.smallAndBig = [0,1]
-        self.toMatch = 0
-        self.pot = 0
-        
+        # Initialize the game state
+        self.players = []            # List to store player objects
+        self.deck = Deck()           # Create a deck of cards
+        self.communityCards = CommunityCards()  # Create an empty set of community cards
+        self.smallAndBig = [0, 1]    # Index of small blind and big blind players
+        self.toMatch = 0             # Current amount to match for betting
+        self.pot = 0                # Total chips in the pot
         
     def addPlayers(self):
         """
@@ -153,6 +165,7 @@ class Game:
         Args:
             name (str): _description_
         """
+        # Prompt players to enter their names and add them to the game
         print("Welcome to poker. Please add players to the game (min=2, max=6).")
         count = 1
         name = input(f"Enter your name (Player 1): ")
@@ -447,6 +460,12 @@ class Game:
         return bestHand
     
     def printBoard(self, gameEnd):
+        """
+            Print the Cards on the Board and the individual chip situation
+
+        Args:
+            gameEnd (bool): If the round is at the end, show everyone's hand. If not only player 1
+        """
         print("______________________________________________________________________")
         self.communityCards.printCards()
         print("Pot: " + str(self.pot))
@@ -468,6 +487,13 @@ class Game:
         time.sleep(2)
             
     def printWinners(self, winners, bestHand):
+        """
+            Print the Winners of the game and what hand they won by
+
+        Args:
+            winners (list[Player]): A List of all the players that won
+            bestHand (list[]): A list of all the winning hand and the card strength
+        """
         winningHand = bestHand[0][0].replace('_',' ')
         print("The winners are:")
         for player in winners:
@@ -475,6 +501,9 @@ class Game:
         print("With the winning hand of " + winningHand)
     
     def smallAndBigBets(self):
+        """
+            Start the game by getting the big and small blind bets
+        """
         bigBlind = self.players[self.smallAndBig[1]]
         smallBlind = self.players[self.smallAndBig[0]]
         self.toMatch = 20
@@ -494,9 +523,9 @@ class Game:
         self.pot += smallBlind.currentBet
               
     def betting(self):
-        # We have OOOOO SB BB
-        # On the flop Right of BB starts
-        # After that SB starts
+        """
+            Play the round of betting
+        """
         l = len(self.players)
         if len(self.communityCards.cards) == 0:
             start = (self.smallAndBig[1] + 1) % l
@@ -547,31 +576,43 @@ class Game:
         print("Betting Closed")
     
     def evalWinners(self):
-            # Evaluating the winner
-            winners = []
-            bestHand = []
-            for player in self.players:
-                if player.folded != True:
-                    if winners == []:
+        """
+            Evaluate the winners based on the hands of the players
+            
+            Returns:
+                winners: A list of all of the players that won
+                bestHand: A list of the hand information of all the players that won in the same order
+        """
+        winners = []
+        bestHand = []
+        for player in self.players:
+            if player.folded != True:
+                if winners == []:
+                    winners.append(player)
+                    bestHand.append(self.findBestHand(player))
+                else:
+                    curBest = bestHand[0]
+                    compHand = self.findBestHand(player)
+                    result = self.compareHands(curBest, compHand)
+                    if result == 2:
+                        winners = []
+                        bestHand = []
                         winners.append(player)
-                        bestHand.append(self.findBestHand(player))
+                        bestHand.append(compHand)
+                    elif result == 3:
+                        winners.append(player)
+                        bestHand.append(compHand)
                     else:
-                        curBest = bestHand[0]
-                        compHand = self.findBestHand(player)
-                        result = self.compareHands(curBest, compHand)
-                        if result == 2:
-                            winners = []
-                            bestHand = []
-                            winners.append(player)
-                            bestHand.append(compHand)
-                        elif result == 3:
-                            winners.append(player)
-                            bestHand.append(compHand)
-                        else:
-                            pass
-            return winners, bestHand
+                        pass
+        return winners, bestHand
     
     def distributeWinnings(self, winners):
+        """
+            Distribute the pot to all of the winners
+
+        Args:
+            winners (List[Player]): A list of all of the winners in a round
+        """
         pot = self.pot
         l = len(winners)
         winnings = pot // l
@@ -581,7 +622,13 @@ class Game:
             player.currentBet = 0
                
     def prepNewRound(self) -> bool:
-        # Reset Cards and Deck
+        """
+        Prepare for a new round of the game.
+
+        Returns:
+            bool: True if the main player has no chips left or is the last player remaining, else False.
+        """
+        # Reset the deck, community cards, and pot
         self.deck = Deck()
         self.communityCards = CommunityCards()
         self.pot = 0

@@ -11,10 +11,12 @@
 import random
 import itertools
 import time
+import pygame
+import os
 
 # Constants for card ranks and suits
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
+suits = ['hearts', 'diamonds', 'clubs', 'spades']
 
 # Hand rankings used for poker evaluation
 HAND_RANKINGS = {
@@ -677,8 +679,43 @@ class Game:
         self.printBoard(True)
         return self.prepNewRound()
         
+class PokerGUI:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption("Poker Game")
+
+        # Load card images
+        self.card_images = self.load_card_images("images/PNG-cards-1.3/")
+        
+    def load_card_images(self, image_dir):
+        card_images = {}
+        for filename in os.listdir(image_dir):
+            if filename.endswith(".png"):
+                card_name = os.path.splitext(filename)[0]
+                card_image = pygame.image.load(os.path.join(image_dir, filename))
+                card_images[card_name] = card_image
+        return card_images
+    
+    def draw_game(self):
+        # Draw player hands, community cards, buttons, and other game elements
+        pass
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            # Handle other events like mouse clicks or button presses
+
+    def run(self):
+        while True:
+            self.handle_events()
+            self.draw_game()
+            pygame.display.flip()
+            
 def main():
     game = Game()
+    pokerGUI = PokerGUI()
     game.addPlayers()
     while True:
         print("______________________________________________________________________\n")

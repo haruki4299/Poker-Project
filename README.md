@@ -1,14 +1,14 @@
 # Poker-Project
 
-Personal Project for fun.
-Poker game simulator with 2-6 players (1-5 CPU players)
-Single Player mode only.
+Personal Project for fun.<br />
+Poker game simulator with 2-6 players (1-5 CPU players)<br />
+Single Player mode only.<br />
 
 ## How-to:
 
-Install Python3 on your machine
-Make sure you are in the directory with pokerGUI.py
-Run `python3 pokerGUI.py`
+Install Python3 on your machine<br />
+Make sure you are in the directory with pokerGUI.py<br />
+Run `python3 pokerGUI.py`<br />
 
 ## Notes:
 
